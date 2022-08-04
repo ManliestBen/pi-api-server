@@ -2,6 +2,7 @@ from flask import Flask, request, Response
 import RPi.GPIO as GPIO
 import time
 
+
 app = Flask(__name__)
 
 color_r = 0
