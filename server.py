@@ -1,9 +1,11 @@
 from flask import Flask, request, Response
+from flask_cors import CORS
 import RPi.GPIO as GPIO
 import time
 
 
 app = Flask(__name__)
+CORS(app)
 
 color_r = 0
 color_g = 0
@@ -13,9 +15,9 @@ color_b = 0
 def process_json():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
-        r = int(request.json["R"])
-        g =int(request.json["G"])
-        b = int(request.json["B"])
+        r = int(request.json["r"])
+        g =int(request.json["g"])
+        b = int(request.json["b"])
         return run_test(r, g, b)
     else:
         return 'Content-Type not supported!'
@@ -51,7 +53,7 @@ def run_test(r, g, b):
         
     def displayColors(r, g, b):
         setColor((r/255)*100, (g/255)*100, (b/255)*100) #   cornflower blue color
-        time.sleep(15)   # 1s
+        time.sleep(5)   # 1s
         
     def destroy():
         pwmR.stop()
