@@ -1,7 +1,7 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
 import RPi.GPIO as GPIO
-import time, math, struct, random
+import time, math, struct, random, sys
 from pathlib import Path
 from luma.core.virtual import viewport
 from luma.core.render import canvas
@@ -9,7 +9,7 @@ from PIL import ImageFont, Image, ImageDraw
 from luma.oled.device import ssd1306
 from luma.core.interface.serial import i2c
 from random import randint, gauss
-from luma.core.sprite_system import framerate_regulator
+from luma.core.sprite_system import framerate_regulator, spritesheet
 
 
 app = Flask(__name__)
@@ -84,6 +84,12 @@ def process_snow():
     if oled_busy:
         return Response("Device is busy", status=503, mimetype='application/json')
     return make_it_snow()
+
+@app.route('/runner', methods=['GET'])
+def process_runner():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
+    return activate_runner()
 
 @app.route('/rgb', methods=['POST'])
 def process_json_rgb():
@@ -195,6 +201,58 @@ def star_wars_scroll():
 
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
+
+def activate_runner():
+    global oled_busy
+    oled_busy = True
+
+    data = {
+        'image': str(Path(__file__).resolve().parent.joinpath('images', 'runner.png')),
+        'frames': {
+            'width': 64,
+            'height': 67,
+            'regX': 0,
+            'regY': 2
+        },
+        'animations': {
+            'run-right': {
+                'frames': range(19, 9, -1),
+                'next': "run-right",
+            },
+            'run-left': {
+                'frames': range(0, 10),
+                'next': "run-left"
+            }
+        }
+    }
+
+    regulator = framerate_regulator()
+    sheet = spritesheet(**data)
+    runner = sheet.animate('run-right')
+    x = -sheet.frames.width
+    dx = 3
+    num_iterations = 1
+
+    while num_iterations > 0:
+        with regulator:
+            num_iterations -= 1
+
+            background = Image.new(device.mode, device.size, "white")
+            background.paste(next(runner), (x, 0))
+            device.display(background)
+            x += dx
+
+            if x >= device.width:
+                runner = sheet.animate('run-left')
+                dx = -dx
+
+            if x <= -sheet.frames.width:
+                runner = sheet.animate('run-right')
+                dx = -dx
+
+    oled_busy = False
+    return Response("Successful", status=201, mimetype='application/json')
+
 
 def make_it_snow():
     global oled_busy
