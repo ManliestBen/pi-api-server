@@ -19,6 +19,9 @@ color_r = 0
 color_g = 0
 color_b = 0
 
+rgb_busy = False
+oled_busy = False
+
 def make_font(name, size):
     font_path = str(Path(__file__).resolve().parent.joinpath('fonts', name))
     return ImageFont.truetype(font_path, size)
@@ -27,6 +30,8 @@ font = make_font("ProggyTiny.ttf", 30)
 
 @app.route('/rgb', methods=['POST'])
 def process_json_rgb():
+    if rgb_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
         r = int(request.json["r"])
@@ -38,6 +43,8 @@ def process_json_rgb():
 
 @app.route('/message', methods=['POST'])
 def process_json_message():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
         message = request.json["message"]
@@ -50,6 +57,7 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 def display_message(message):
+    oled_busy = True
     device = ssd1306(serial, width=128, height=32)
     virtual = viewport(device, width=1360, height=768)
 
@@ -67,9 +75,11 @@ def display_message(message):
         virtual.set_position((x, 0))
         time.sleep(0.001)
     
+    oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
 def set_rgb(r, g, b):
+    rgb_busy = True
     pins = (11,13,15) 
     GPIO.setmode(GPIO.BOARD)
     
@@ -103,4 +113,5 @@ def set_rgb(r, g, b):
     setup()
     displayColors(r, g, b)
     destroy()
+    rgb_busy = False
     return Response("Successful", status=201, mimetype='application/json')
