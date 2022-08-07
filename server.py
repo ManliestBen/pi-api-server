@@ -231,7 +231,7 @@ def activate_runner():
     runner = sheet.animate('run-right')
     x = -sheet.frames.width
     dx = 3
-    num_iterations = 1
+    num_iterations = 125
 
     while num_iterations > 0:
         with regulator:
@@ -249,7 +249,7 @@ def activate_runner():
             if x <= -sheet.frames.width:
                 runner = sheet.animate('run-right')
                 dx = -dx
-
+    device.clear()
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
