@@ -10,10 +10,14 @@
 Adapted from:
 http://codentronix.com/2011/05/28/3d-starfield-made-using-python-and-pygame/
 """
-
+import time
 from random import randrange
-from demo_opts import get_device
 from luma.core.render import canvas
+from luma.oled.device import ssd1306
+from luma.core.interface.serial import i2c
+
+serial = i2c(port=1, address=0x3C)
+
 
 
 def init_stars(num_stars, max_depth):
@@ -63,13 +67,14 @@ def move_and_draw_stars(stars, max_depth):
 def main():
     max_depth = 32
     stars = init_stars(512, max_depth)
-    while True:
+    timeout_start = time.time()
+    while time.time() < timeout_start + 7:
         move_and_draw_stars(stars, max_depth)
 
 
 if __name__ == "__main__":
     try:
-        device = get_device()
+        device = ssd1306(serial, width=128, height=32)
         main()
     except KeyboardInterrupt:
         pass
