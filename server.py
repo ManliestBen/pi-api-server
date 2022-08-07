@@ -244,6 +244,7 @@ def into_the_stars():
     timeout_start = time.time()
     while time.time() < timeout_start + 7:
         move_and_draw_stars(stars, max_depth)
+    device.clear()
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
