@@ -57,6 +57,7 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 def display_message(message):
+    global oled_busy
     oled_busy = True
     device = ssd1306(serial, width=128, height=32)
     virtual = viewport(device, width=1360, height=768)
@@ -79,6 +80,7 @@ def display_message(message):
     return Response("Successful", status=201, mimetype='application/json')
 
 def set_rgb(r, g, b):
+    global rgb_busy
     rgb_busy = True
     pins = (11,13,15) 
     GPIO.setmode(GPIO.BOARD)
