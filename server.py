@@ -161,7 +161,7 @@ def activate_matrix():
 
         while len(blue_pilled_population) > max_population:
             blue_pilled_population.pop(0)
-
+    device.clear()
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
