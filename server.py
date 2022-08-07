@@ -26,7 +26,7 @@ def make_font(name, size):
 font = make_font("ProggyTiny.ttf", 30)
 
 @app.route('/rgb', methods=['POST'])
-def process_json():
+def process_json_rgb():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
         r = int(request.json["r"])
@@ -37,7 +37,7 @@ def process_json():
         return 'Content-Type not supported!'
 
 @app.route('/message', methods=['POST'])
-def process_json():
+def process_json_message():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
         message = request.json["message"]
