@@ -18,10 +18,6 @@ serial = i2c(port=1, address=0x3C)
 
 
 device = ssd1306(serial, width=128, height=32)
-size = (60, 30)
-# Calc offset to center text vertically and horizontally
-offset = ((device.width - size[0]) // 2, (device.height - size[1]) // 2)
-shadow_offset = (offset[0] + 1, offset[1] + 1)
 
 
 def snow():
@@ -30,17 +26,10 @@ def snow():
     packed = struct.pack('i' * len(data), *data)
     background = Image.frombytes("RGBA", device.size, packed)
 
-    draw = ImageDraw.Draw(background)
-    # draw.multiline_text(shadow_offset, "Please do\nnot adjust\nyour set", fill="black", align="center", spacing=-1)
-    # draw.multiline_text(offset, "Please do\nnot adjust\nyour set", fill="white", align="center", spacing=-1)
-
     return background.convert(device.mode)
 
 
 def main():
-    # with canvas(device) as draw:
-    #     draw.multiline_text(offset, "Please do\nnot adjust\nyour set", fill="white", align="center", spacing=-1)
-
     images = [snow() for _ in range(20)]
     timeout_start = time.time()
     while time.time() < timeout_start + 7:

@@ -1,11 +1,11 @@
 from flask import Flask, request, Response
 from flask_cors import CORS
 import RPi.GPIO as GPIO
-import time, math
+import time, math, struct, random
 from pathlib import Path
 from luma.core.virtual import viewport
 from luma.core.render import canvas
-from PIL import ImageFont
+from PIL import ImageFont, Image, ImageDraw
 from luma.oled.device import ssd1306
 from luma.core.interface.serial import i2c
 
@@ -14,6 +14,7 @@ app = Flask(__name__)
 CORS(app)
 
 serial = i2c(port=1, address=0x3C)
+device = ssd1306(serial, width=128, height=32)
 
 color_r = 0
 color_g = 0
@@ -27,6 +28,28 @@ def make_font(name, size):
     return ImageFont.truetype(font_path, size)
 
 font = make_font("ProggyTiny.ttf", 30)
+
+@app.route('/tv_snow')
+def make_it_snow():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
+    global oled_busy
+    oled_busy = True
+    def snow():
+        data = [random.randint(0, 0xFFFFFF)
+                for _ in range(device.width * device.height)]
+        packed = struct.pack('i' * len(data), *data)
+        background = Image.frombytes("RGBA", device.size, packed)
+
+        return background.convert(device.mode)
+    images = [snow() for _ in range(20)]
+    timeout_start = time.time()
+    while time.time() < timeout_start + 7:
+        random.shuffle(images)
+        for background in images:
+            device.display(background)
+    oled_busy = False
+    return Response("Successful", status=201, mimetype='application/json')
 
 @app.route('/rgb', methods=['POST'])
 def process_json_rgb():
@@ -59,7 +82,6 @@ def hello_world():
 def display_message(message):
     global oled_busy
     oled_busy = True
-    device = ssd1306(serial, width=128, height=32)
     virtual = viewport(device, width=1360, height=768)
 
     with canvas(virtual) as draw:
