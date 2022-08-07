@@ -81,8 +81,6 @@ def main():
 
     time.sleep(2)
 
-    # update the viewport one position below, causing a refresh,
-    # giving a rolling up scroll effect when done repeatedly
     for y in range(450):
         virtual.set_position((0, y))
         time.sleep(0.008)

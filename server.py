@@ -23,6 +23,41 @@ color_b = 0
 rgb_busy = False
 oled_busy = False
 
+blurb = """
+
+
+   Episode IV:
+   A NEW HOPE
+
+It is a period of
+civil war. Rebel
+spaceships, striking
+from a hidden base,
+have won their first
+victory against the
+evil Galactic Empire.
+
+During the battle,
+Rebel spies managed
+to steal secret plans
+to the Empire's ulti-
+mate weapon, the
+DEATH STAR, an armor-
+ed space station with
+enough power to des-
+troy an entire planet.
+
+Pursued by the
+Empire's sinister
+agents, Princess Leia
+races home aboard her
+starship, custodian
+of the stolen plans
+that can save her
+people and restore
+freedom to the
+galaxy....
+"""
 
 def make_font(name, size):
     font_path = str(Path(__file__).resolve().parent.joinpath('fonts', name))
@@ -30,9 +65,14 @@ def make_font(name, size):
 
 font = make_font("ProggyTiny.ttf", 30)
 
+@app.route('/starwars', methods=['GET'])
+def process_sw_scroll():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
+    return star_wars_scroll() 
+
 @app.route('/snow', methods=['GET'])
 def process_snow():
-    print(oled_busy, 'inside route')
     if oled_busy:
         return Response("Device is busy", status=503, mimetype='application/json')
     return make_it_snow()
@@ -65,10 +105,40 @@ def process_json_message():
 def hello_world():
     return "<p>Hello, World!</p>"
 
+def star_wars_scroll():
+    global oled_busy
+    oled_busy = True
+    img_path = str(Path(__file__).resolve().parent.joinpath('images', 'starwars.png'))
+    logo = Image.open(img_path)
+
+    virtual = viewport(device, width=device.width, height=768)
+
+    for _ in range(2):
+        with canvas(virtual) as draw:
+            draw.text((0, 0), "A long time ago", fill="white")
+            draw.text((0, 12), "in a galaxy far", fill="white")
+            draw.text((0, 24), "far away....", fill="white")
+
+    time.sleep(5)
+
+    for _ in range(2):
+        with canvas(virtual) as draw:
+            draw.bitmap((20, 0), logo, fill="white")
+            for i, line in enumerate(blurb.split("\n")):
+                draw.text((0, 40 + (i * 12)), text=line, fill="white")
+
+    time.sleep(2)
+
+    for y in range(450):
+        virtual.set_position((0, y))
+        time.sleep(0.008)
+
+    oled_busy = False
+    return Response("Successful", status=201, mimetype='application/json')
+
 def make_it_snow():
     global oled_busy
     oled_busy = True
-    print(oled_busy, 'inside makeitsnow')
     def snow():
         data = [random.randint(0, 0xFFFFFF)
                 for _ in range(device.width * device.height)]
@@ -83,9 +153,7 @@ def make_it_snow():
         for background in images:
             device.display(background)
     device.clear()
-    print(oled_busy, 'before falseswap')
     oled_busy = False
-    print(oled_busy, 'post falseswap')
     return Response("Successful", status=201, mimetype='application/json')
 
 def display_message(message):
