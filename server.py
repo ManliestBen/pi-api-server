@@ -31,9 +31,9 @@ font = make_font("ProggyTiny.ttf", 30)
 
 @app.route('/tv_snow')
 def make_it_snow():
+    global oled_busy
     if oled_busy:
         return Response("Device is busy", status=503, mimetype='application/json')
-    global oled_busy
     oled_busy = True
     def snow():
         data = [random.randint(0, 0xFFFFFF)
@@ -48,6 +48,7 @@ def make_it_snow():
         random.shuffle(images)
         for background in images:
             device.display(background)
+    device.clear()
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
