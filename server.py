@@ -257,7 +257,7 @@ def into_the_stars():
 def play_invaders():
     global oled_busy
     oled_busy = True
-
+    device = ssd1306(serial, width=128, height=64)
     arrow = [0x04, 0x02, 0x01, 0x02, 0x04]
     alien1 = [0x4C, 0x1A, 0xB6, 0x5F, 0x5F, 0xB6, 0x1A, 0x4C]
     alien2 = [0x18, 0xFD, 0xA6, 0x3C, 0x3C, 0xA6, 0xFD, 0x18]
@@ -456,14 +456,15 @@ def play_invaders():
     for i in range(2):
         with canvas(device) as draw:
             if army.size() == 0:
-                draw.text((27, 28), text="Victory", fill="blue")
+                draw.text((27, 28), font=font, text="Victory", fill="blue")
             else:
-                draw.text((30, 28), text="Defeat", fill="red")
+                draw.text((30, 28), font=font, text="Defeat", fill="red")
 
     time.sleep(5)
 
 
     device.clear()
+    device = ssd1306(serial, width=128, height=32)
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
@@ -600,3 +601,5 @@ def set_rgb(r, g, b):
     destroy()
     rgb_busy = False
     return Response("Successful", status=201, mimetype='application/json')
+
+app.run(port=5001, host='0.0.0.0')
