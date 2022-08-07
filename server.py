@@ -8,7 +8,7 @@ from luma.core.render import canvas
 from PIL import ImageFont, Image, ImageDraw
 from luma.oled.device import ssd1306
 from luma.core.interface.serial import i2c
-from random import randint, gauss
+from random import randint, gauss, randrange
 from luma.core.sprite_system import framerate_regulator, spritesheet
 
 
@@ -84,6 +84,12 @@ def process_snow():
     if oled_busy:
         return Response("Device is busy", status=503, mimetype='application/json')
     return make_it_snow()
+
+@app.route('/stars', methods=['GET'])
+def process_stars():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
+    return into_the_stars()
 
 @app.route('/runner', methods=['GET'])
 def process_runner():
@@ -199,6 +205,45 @@ def star_wars_scroll():
         virtual.set_position((0, y))
         time.sleep(0.008)
 
+    oled_busy = False
+    return Response("Successful", status=201, mimetype='application/json')
+
+def into_the_stars():
+    global oled_busy
+    oled_busy = True
+    def init_stars(num_stars, max_depth):
+        stars = []
+        for i in range(num_stars):
+            star = [randrange(-25, 25), randrange(-25, 25), randrange(1, max_depth)]
+            stars.append(star)
+        return stars
+    def move_and_draw_stars(stars, max_depth):
+        origin_x = device.width // 2
+        origin_y = device.height // 2
+
+        with canvas(device) as draw:
+            for star in stars:
+                star[2] -= 0.19
+                if star[2] <= 0:
+                    star[0] = randrange(-25, 25)
+                    star[1] = randrange(-25, 25)
+                    star[2] = max_depth
+
+                k = 128.0 / star[2]
+                x = int(star[0] * k + origin_x)
+                y = int(star[1] * k + origin_y)
+                if 0 <= x < device.width and 0 <= y < device.height:
+                    size = (1 - float(star[2]) / max_depth) * 4
+                    if (device.mode == "RGB"):
+                        shade = (int(100 + (1 - float(star[2]) / max_depth) * 155),) * 3
+                    else:
+                        shade = "white"
+                    draw.rectangle((x, y, x + size, y + size), fill=shade)
+    max_depth = 32
+    stars = init_stars(512, max_depth)
+    timeout_start = time.time()
+    while time.time() < timeout_start + 7:
+        move_and_draw_stars(stars, max_depth)
     oled_busy = False
     return Response("Successful", status=201, mimetype='application/json')
 
