@@ -8,6 +8,8 @@ from luma.core.render import canvas
 from PIL import ImageFont, Image, ImageDraw
 from luma.oled.device import ssd1306
 from luma.core.interface.serial import i2c
+from random import randint, gauss
+from luma.core.sprite_system import framerate_regulator
 
 
 app = Flask(__name__)
@@ -71,6 +73,12 @@ def process_sw_scroll():
         return Response("Device is busy", status=503, mimetype='application/json')
     return star_wars_scroll() 
 
+@app.route('/matrix', methods=['GET'])
+def process_activate_matrix():
+    if oled_busy:
+        return Response("Device is busy", status=503, mimetype='application/json')
+    return activate_matrix() 
+
 @app.route('/snow', methods=['GET'])
 def process_snow():
     if oled_busy:
@@ -104,6 +112,58 @@ def process_json_message():
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
+
+def activate_matrix():
+    global oled_busy
+    oled_busy = True
+    wrd_rgb = [
+        (154, 173, 154),
+        (0, 255, 0),
+        (0, 235, 0),
+        (0, 220, 0),
+        (0, 185, 0),
+        (0, 165, 0),
+        (0, 128, 0),
+        (0, 0, 0),
+        (154, 173, 154),
+        (0, 145, 0),
+        (0, 125, 0),
+        (0, 100, 0),
+        (0, 80, 0),
+        (0, 60, 0),
+        (0, 40, 0),
+        (0, 0, 0)
+    ]
+
+    clock = 0
+    blue_pilled_population = []
+    max_population = device.width * 8
+    regulator = framerate_regulator(fps=10)
+
+    def increase_population():
+        blue_pilled_population.append([randint(0, device.width), 0, gauss(1.2, 0.6)])
+
+    timeout_start = time.time()
+    while time.time() < timeout_start + 7:
+        clock += 1
+        with regulator:
+            with canvas(device, dither=True) as draw:
+                for person in blue_pilled_population:
+                    x, y, speed = person
+                    for rgb in wrd_rgb:
+                        if 0 <= y < device.height:
+                            draw.point((x, y), fill=rgb)
+                        y -= 1
+                    person[1] += speed
+
+        if clock % 5 == 0 or clock % 3 == 0:
+            increase_population()
+
+        while len(blue_pilled_population) > max_population:
+            blue_pilled_population.pop(0)
+
+    oled_busy = False
+    return Response("Successful", status=201, mimetype='application/json')
 
 def star_wars_scroll():
     global oled_busy
