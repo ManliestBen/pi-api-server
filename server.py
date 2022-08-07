@@ -23,34 +23,19 @@ color_b = 0
 rgb_busy = False
 oled_busy = False
 
+
 def make_font(name, size):
     font_path = str(Path(__file__).resolve().parent.joinpath('fonts', name))
     return ImageFont.truetype(font_path, size)
 
 font = make_font("ProggyTiny.ttf", 30)
 
-@app.route('/tv_snow')
-def make_it_snow():
-    global oled_busy
+@app.route('/snow', methods=['GET'])
+def process_snow():
+    print(oled_busy, 'inside route')
     if oled_busy:
         return Response("Device is busy", status=503, mimetype='application/json')
-    oled_busy = True
-    def snow():
-        data = [random.randint(0, 0xFFFFFF)
-                for _ in range(device.width * device.height)]
-        packed = struct.pack('i' * len(data), *data)
-        background = Image.frombytes("RGBA", device.size, packed)
-
-        return background.convert(device.mode)
-    images = [snow() for _ in range(20)]
-    timeout_start = time.time()
-    while time.time() < timeout_start + 7:
-        random.shuffle(images)
-        for background in images:
-            device.display(background)
-    device.clear()
-    oled_busy = False
-    return Response("Successful", status=201, mimetype='application/json')
+    return make_it_snow()
 
 @app.route('/rgb', methods=['POST'])
 def process_json_rgb():
@@ -79,6 +64,29 @@ def process_json_message():
 @app.route("/")
 def hello_world():
     return "<p>Hello, World!</p>"
+
+def make_it_snow():
+    global oled_busy
+    oled_busy = True
+    print(oled_busy, 'inside makeitsnow')
+    def snow():
+        data = [random.randint(0, 0xFFFFFF)
+                for _ in range(device.width * device.height)]
+        packed = struct.pack('i' * len(data), *data)
+        background = Image.frombytes("RGBA", device.size, packed)
+
+        return background.convert(device.mode)
+    images = [snow() for _ in range(20)]
+    timeout_start = time.time()
+    while time.time() < timeout_start + 7:
+        random.shuffle(images)
+        for background in images:
+            device.display(background)
+    device.clear()
+    print(oled_busy, 'before falseswap')
+    oled_busy = False
+    print(oled_busy, 'post falseswap')
+    return Response("Successful", status=201, mimetype='application/json')
 
 def display_message(message):
     global oled_busy
