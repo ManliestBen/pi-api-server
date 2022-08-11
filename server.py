@@ -123,6 +123,8 @@ def process_json_message():
     content_type = request.headers.get('Content-Type')
     if (content_type == 'application/json'):
         message = request.json["message"]
+        if len(message) > 100:
+            return Response("Exceeded Character Limit", status=400, mimetype='application/json')
         return display_message(message)
     else:
         return 'Content-Type not supported!'
